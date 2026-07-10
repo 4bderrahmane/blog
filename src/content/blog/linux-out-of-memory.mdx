@@ -1,0 +1,129 @@
+export const metadata = {
+  title: "What Really Happens When Linux Runs Out of Memory?",
+  date: "2026-03-06",
+  summary: "A practical walkthrough of overcommit, reclaim, compaction, and the OOM killer.",
+};
+
+You're using your computer, and you decide to open as much as you can and create
+plenty of running processes. You basically can't, because you don't have
+hundreds of gigabytes of RAM. But have you ever wondered how the OS handles this
+if you try to do it?
+
+Talking about Linux as usual.
+
+By default, Linux uses a strategy called **memory overcommit**. Linux can
+"promise" more memory than it physically has: for example, a process can reserve
+30GB of virtual memory on a machine with only 16GB of RAM. This is virtual
+memory: Linux doesn't immediately allocate real RAM for all of it. Instead,
+physical pages are mapped or allocated when memory is actually used, because
+Linux assumes processes won't end up using every byte they reserve.
+
+But when processes really start consuming memory and the system gets close to
+its physical limits, Linux has to react. The kernel doesn't wait until "memory
+is at 0%." It monitors free memory using **watermarks: high, low, and min**.
+Important nuance: these watermarks are per memory zone, not one single global
+RAM meter.
+
+## Level 1: Background Reclaim, kswapd
+
+When free memory drops below the **low** watermark in a zone, the kernel wakes
+up a background thread called **kswapd**. Its job is to reclaim memory
+asynchronously while your applications keep running. The goal is generally to
+bring the zone back toward the **high** watermark; then kswapd can go back to
+sleep.
+
+kswapd tries to reclaim memory using mechanisms that are usually
+"safest/cheapest" first, but it's not a perfectly strict step-by-step ladder in
+all cases.
+
+**Dropping clean caches:** These are typically clean file-backed page cache
+pages: data from files you read from disk that Linux kept in RAM to speed up
+future reads. Because the original data still exists on disk, these pages can be
+dropped safely.
+
+**Reclaiming dirty file-backed pages (writeback):** If an application modified a
+file-backed cached page and it hasn't been written to disk yet, it's a dirty
+page. To reclaim it, Linux generally needs writeback first, writing it to disk
+so it becomes reclaimable. This isn't "kswapd instantly forces a flush"; it
+depends on I/O speed and writeback behavior, so it can be slow under heavy disk
+pressure.
+
+**Shrinking kernel slabs:** Linux caches internal kernel objects, for example
+dentries and inodes used for filesystem lookups. Under pressure, reclaim can ask
+these caches to shrink via shrinkers to free memory.
+
+**Swapping, if enabled:** If dropping file cache and shrinking reclaimable kernel
+memory isn't enough, Linux may evict anonymous memory, such as heap, stack, and
+private pages, to swap. This uses disk as backing store for those pages. It can
+save you from OOM, but it can also make the system painfully slow if it turns
+into heavy swapping or thrashing.
+
+## Level 2: Direct Reclaim
+
+If memory pressure becomes severe and approaches the **min** watermark,
+background reclaim may not keep up. At that point, Linux can enter **direct
+reclaim** for a specific allocation.
+
+This is the key correction: Linux doesn't literally tell the app "flush your own
+caches." Instead, the thread that requested memory can be forced to do reclaim
+work synchronously inside the kernel allocation path. In practice, that thread
+can stall, so your app appears frozen, while the kernel tries reclaim and
+sometimes compaction to satisfy the allocation. The thread remains blocked until
+the allocation succeeds, fails depending on flags and policy, or the kernel
+escalates toward OOM handling.
+
+## Level 3: Memory Compaction
+
+Sometimes the system technically has enough free memory in total, but it's
+heavily fragmented into small chunks, and an allocation needs a larger
+contiguous block. This is common for higher-order allocations. Before killing
+anything, the kernel may attempt **memory compaction**: migrating or moving
+pages around to create larger contiguous free ranges.
+
+It's not exactly like a disk defragmenter, because everything is live and
+constrained, but the analogy is fair: compaction can stall work, move pages, and
+"stitch" free space into bigger blocks.
+
+## If All of the Above Fails: The OOM Killer
+
+If reclaim, swap if available, and compaction can't make enough progress, and
+the kernel can't satisfy critical allocations, Linux has no choice but to kill a
+process. Otherwise the system can hang or fail in worse ways.
+
+Linux computes an OOM "badness" score per process and exposes a value at:
+
+```txt
+/proc/<pid>/oom_score
+```
+
+In general, the kernel tends to pick a process where killing it frees a lot of
+memory, and it usually kills the process with the highest effective score.
+
+The rough formula is fine as a mental model if you label it as approximate. It
+changes across kernel versions and is not a guaranteed public formula. A
+reasonable simplified shape is:
+
+```txt
+score ~= (RSS + swap usage + page table pages) normalized by total pages
+```
+
+So it correlates with how much memory the process is consuming, including swap
+impact and page table overhead, not just RSS alone.
+
+There is one more control value here:
+
+```txt
+/proc/<pid>/oom_score_adj
+```
+
+This is set by an administrator or service manager like systemd. It ranges from
+**-1000 to +1000** and strongly biases OOM selection. One important detail: the
+exported `/proc/<pid>/oom_score` is already an effective score, meaning it
+reflects adjustments in the final outcome. So don't think of it as
+"raw score + adj = oom_score" as if those are always separate numbers.
+
+**NOTE:** If you set `oom_score_adj` to **-1000**, the kernel will effectively
+exclude that process from being chosen as an OOM victim. This can be used for
+truly critical services, but use it sparingly. If you make too many processes
+"unkillable," the kernel will be forced to kill something else, or you can end
+up in a nastier failure mode.

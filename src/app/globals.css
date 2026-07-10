@@ -1,0 +1,344 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  /* Pure black & white. One gray (`--muted`) carries all the hierarchy; there
+     is no color accent — links lean on weight and underline instead. */
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --muted: #6b7280;
+  --accent: var(--foreground); /* kept so legacy `text-accent` stays mono */
+  --border: #e5e7eb;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display-raw); /* bold grotesk — name, eyebrows */
+  --font-serif: var(--font-serif-raw); /* serif — article / post titles */
+}
+
+/* Light theme only — white background, black content. No dark variant. */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Long-form article styling for rendered MDX (the .prose container). */
+.prose {
+  color: var(--foreground);
+}
+.prose h1,
+.prose h2,
+.prose h3 {
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.01em;
+}
+.prose h1 {
+  font-size: 1.875rem;
+}
+.prose h2 {
+  font-size: 1.5rem;
+}
+.prose h3 {
+  font-size: 1.25rem;
+}
+.prose p,
+.prose ul,
+.prose ol,
+.prose blockquote {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+.prose ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+.prose ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+.prose a {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  text-decoration-color: var(--border);
+  transition: text-decoration-color 0.15s;
+}
+.prose a:hover {
+  text-decoration-color: var(--foreground);
+}
+.prose a.back-link,
+.prose a.back-link:hover {
+  text-decoration: none;
+}
+.prose blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+  color: var(--muted);
+  font-style: italic;
+}
+.prose code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.875em;
+  font-variant-ligatures: none;
+  font-feature-settings:
+    "liga" 0,
+    "calt" 0;
+  background: color-mix(in srgb, var(--muted) 15%, transparent);
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+}
+.prose pre {
+  max-width: 100%;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--muted) 7%, var(--background));
+  box-shadow:
+    0 1px 0 rgb(10 10 10 / 0.04),
+    0 18px 42px rgb(10 10 10 / 0.06);
+  tab-size: 4;
+}
+.prose pre code {
+  display: block;
+  min-width: max-content;
+  background: none;
+  padding: 0;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+
+/* Syntax-highlighted code blocks (rehype-pretty-code + Shiki). Token colors
+   are baked inline by Shiki using the monochrome theme; everything here is the
+   surrounding chrome: the framed box and language header. */
+.prose figure[data-rehype-pretty-code-figure] {
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+  margin: 1.75rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--muted) 7%, var(--background));
+  box-shadow:
+    0 1px 0 rgb(10 10 10 / 0.04),
+    0 18px 42px rgb(10 10 10 / 0.06);
+}
+.prose figure[data-rehype-pretty-code-figure] pre {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.prose
+  figure[data-rehype-pretty-code-figure]
+  pre[data-language]:not([data-language="plaintext"]) {
+  padding-top: 3.15rem;
+}
+/* Each highlighted line is a grid row; keep them flush and full-width. */
+.prose figure[data-rehype-pretty-code-figure] code [data-line] {
+  display: block;
+  min-width: 100%;
+  padding-right: 1rem;
+}
+/* Header strip for language-labelled blocks. Hidden for no-language ASCII
+   diagrams (defaultLang = plaintext). */
+.prose
+  figure[data-rehype-pretty-code-figure]
+  pre[data-language]:not([data-language="plaintext"])::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  height: 2.35rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 10%, var(--background));
+  pointer-events: none;
+}
+.prose
+  figure[data-rehype-pretty-code-figure]
+  pre[data-language]:not([data-language="plaintext"])::before {
+  content: attr(data-language);
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  height: 2.35rem;
+  align-items: center;
+  padding: 0 0.875rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border-left: 1px solid var(--border);
+  pointer-events: none;
+}
+.prose .closing-note {
+  margin-top: 2.5rem;
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  text-align: center;
+  color: var(--muted);
+}
+.prose img {
+  border-radius: 8px;
+  margin: 1.5rem 0;
+}
+.prose figure {
+  margin: 1.75rem 0;
+}
+.prose figure img {
+  margin: 0;
+}
+.prose figcaption {
+  margin-top: 0.6rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: center;
+}
+.prose a.reference-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2em;
+  font-weight: 600;
+  text-decoration: none;
+}
+.prose a.reference-link:hover span:first-child {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+.prose a.reference-link sup {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.65em;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted);
+}
+.prose a.reference-link:hover sup {
+  color: var(--foreground);
+}
+.prose .references {
+  margin-top: 3.25rem;
+}
+.prose .references-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.prose .references-heading p {
+  margin: 0;
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.prose .references h2 {
+  margin: 0;
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+.prose .references ol {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.prose .reference-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0.95rem;
+  scroll-margin-top: 7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--muted) 4%, var(--background));
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    box-shadow 0.15s;
+}
+.prose .reference-card:target {
+  border-color: var(--foreground);
+  background: var(--background);
+  box-shadow: 0 14px 36px rgb(10 10 10 / 0.08);
+}
+.prose .reference-index {
+  display: inline-flex;
+  min-width: 2.1rem;
+  height: 1.45rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--foreground);
+  background: var(--background);
+}
+.prose .reference-card h3 {
+  margin: 0;
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+.prose .reference-card p {
+  margin: 0.3rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.prose .reference-card a {
+  display: inline-block;
+  margin-top: 0.55rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-decoration-color: var(--border);
+}

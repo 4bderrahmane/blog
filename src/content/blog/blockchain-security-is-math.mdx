@@ -1,0 +1,27 @@
+export const metadata = {
+  title: "Blockchain Security Is Simply Math",
+  date: "2026-01-15",
+  summary: "Why private-key security rests on an unimaginably large keyspace.",
+};
+
+The main thing that makes Bitcoin, Ethereum, and other blockchains safe is
+simply math.
+
+To put this in context, consider that on our planet there are around
+7.5 x 10^18 grains of sand, while it is believed that there are around 10^80
+atoms in the entire observable universe. This scale is crucial because
+blockchain security relies on a number terrifyingly close to that universal
+limit: `2^256 - 1`, which is roughly `1.157920892 x 10^77`.
+
+It's simply a world with that many houses, and you simply pick a random house in
+this world. This house is open. Everyone can enter it, but the security isn't
+there; it's in the fact that no one would find your house to steal your money
+even if it's open, simply because of its place in this huge world.
+
+Imagine that every atom in the universe is enumerated from `1` to `2^256`. The
+specific order number of an atom is your private key, and its physical place is
+the address where people send you money.
+
+So picking a random private key is technically pointing to a random atom in this
+universe. Basically, no one can find you unless you scream and say "Here I am!",
+which is equivalent to leaking your private key.

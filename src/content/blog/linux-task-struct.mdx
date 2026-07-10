@@ -1,0 +1,29 @@
+export const metadata = {
+  title: "The Linux task_struct",
+  date: "2026-02-11",
+  summary: "How Linux represents processes and threads inside the kernel.",
+};
+
+Whether you're opening a browser, launching your favorite IDE, or watching a
+video, you're simply running a process. We know a process has a PID, a status,
+and consumes resources. But have you ever wondered how this is represented at
+the lowest level, right inside the kernel?
+
+In Linux, a process isn't just a magic box; it's a specific C object called
+`task_struct`.
+
+This structure is the heart of the Linux kernel. It represents any schedulable
+entity. Whether it's a single-threaded process or a thread within a
+multithreaded app, it's all just a `task_struct` to the kernel. The difference
+depends only on how it was created, via system calls like `clone()`, `fork()`,
+or `vfork()`. These system calls belong to Unix-like kernels, like Linux, and
+not the Windows kernel.
+
+It currently occupies approximately 7-8 KiB of memory and lives in
+`include/linux/sched.h`.
+
+It's fascinating to think that the entire concept of "multitasking" on your
+computer is just the CPU hopping between instances of this one massive struct.
+
+Fun fact: processes are just nodes of a massive tree, because every process has
+a parent, except the `systemd` process, which is the process with PID 1.

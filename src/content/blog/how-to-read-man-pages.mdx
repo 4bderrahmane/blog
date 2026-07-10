@@ -1,0 +1,44 @@
+export const metadata = {
+  title: "How to Read Linux man Pages",
+  date: "2026-05-29",
+  summary: "Why manual sections matter and how to ask man for the right thing.",
+};
+
+One of the most boring things to do is to read documentation or manuals. Yet I
+find it one of the most rewarding things ever.
+
+It's basically reading the minds of engineers who build the product you want to
+use, whether it's a library, framework, tool, or whatever. You surely won't know
+better than them, because they've spent months and sometimes years building
+those products.
+
+In Linux distributions, the `man` command is widely used for this purpose, but
+it's very important to know how to use it, because it's not just
+`man something`.
+
+When you run `man something`, the `man` binary starts a lookup through the
+sections, and wherever it finds what you're looking for, it stops and outputs
+it. Careful though: it doesn't search them in numeric order from 1 to 9. It
+follows a predefined order, documented in `man(1)` itself under `MANSECT`, where
+sections 8 and 3 are actually searched before 2.
+
+These sections can be found under `/usr/share/man`, though that's just the
+default. Run `manpath` to see the full list.
+
+Sometimes `man something` is not the right thing to do, because you may be
+looking for something that lives in more than one section under the same name,
+like the `time` command that runs a program and reports how long it took, and
+the `time` syscall that gets the current calendar time as seconds since the Unix
+epoch. So it's worth being precise for a faster lookup.
+
+Here's how you can use it efficiently:
+
+- `man 1` shows manuals of commands like `ls`, `rsync`, `bfs`, and more.
+- `man 2` shows manuals of system calls like `write`, `read`, and `mmap`.
+- `man 3` shows manuals of library calls like OpenSSL functions, or whatever function you usually call from your C/C++ code.
+- `man 4` shows manuals of special files, usually found in `/dev`.
+- `man 5` shows manuals of file formats and conventions like `passwd`, `sudoers`, and `ssh_config`.
+- `man 6` shows manuals of games, yes, Linux distributions have some terminal games.
+- `man 7` shows manuals of overviews, conventions, protocols, and miscellaneous technical topics like `ip`, `tcp`, and `ascii`.
+- `man 8` shows manuals of system administration commands, usually only for root. This is like `man 1`, but not exactly.
+- `man 9` shows manuals of kernel routines. This section is non-standard and is for inside-the-kernel APIs used by kernel developers or driver writers.

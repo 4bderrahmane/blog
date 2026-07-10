@@ -1,0 +1,81 @@
+export const metadata = {
+  title: "Containers Are Just Linux Processes",
+  date: "2026-02-19",
+  summary: "How namespaces, cgroups, capabilities, seccomp, and LSM profiles isolate containers.",
+};
+
+When you run a Docker or Podman container, or whatever runtime you prefer,
+that's nothing special to the kernel. It's just a normal process like every
+other process in your computer. So how is this container isolated, and why can't
+it see any other running processes while imagining itself the "BOSS" with PID 1?
+
+It happens because the `task_struct` that represents a process has pointers to
+specific isolation features. It points to new, distinct instances of these
+features rather than the global ones normal processes share.
+
+In kernel terms, containers are created by manipulating existing Linux features.
+
+## 1. Namespaces
+
+`struct nsproxy *nsproxy`
+
+This restricts the view of the process.
+
+There are a bunch of types of namespaces, like PID namespaces, where the first
+process in that PID namespace sees itself as PID 1, even though it may be PID
+xxxxx on the host. The kernel returns different PID values depending on which
+PID namespace is asking.
+
+There are also network namespaces, where the process gets its own network
+interfaces and IP address; mount namespaces, where the process sees a completely
+different root directory than the host; and so on. You'll find these if you are
+curious in the `nsproxy` struct in the `include/linux/nsproxy.h` file.
+
+In practice, a PID namespace plus a `/proc` mounted inside it is why tools like
+`ps` and `top` only show processes from that namespace.
+
+## 2. Cgroups
+
+`struct css_set *cgroups`
+
+This is another Linux feature. While namespaces isolate visibility, cgroups
+isolate resources like RAM, CPU, and I/O.
+
+For example:
+
+```sh
+docker run --cpus="1.5" some-container
+docker run --memory=512m some-container
+```
+
+## 3. Capabilities
+
+`struct cred *cred`
+
+Even if a process is root inside a container, we don't want it to have full power
+over the kernel.
+
+Linux breaks down root privileges into bitmasks. Specifically, this is
+`typedef struct { u64 val; } kernel_cap_t;`, which replaced the old array form
+`u32[2]`. These are called capabilities, like `CAP_NET_ADMIN`, `CAP_SYS_BOOT`,
+`CAP_SYS_ADMIN`, and so on.
+
+Docker drops the dangerous ones by default. So even if someone gains root inside
+the container, they usually can't load kernel modules or reboot your physical
+machine.
+
+## 4. Seccomp and LSMs
+
+Capabilities restrict privileged operations, but a process can still call many
+syscalls. Seccomp applies a syscall filter, an allowlist or denylist, so the
+container can't use risky syscalls it doesn't need.
+
+AppArmor and SELinux are LSMs, or Linux Security Modules, that enforce mandatory
+access control policies such as file access and network rules beyond classic
+Unix permissions. Docker and Podman commonly run containers under an AppArmor or
+SELinux profile on hardened systems.
+
+Note: containers are basically Linux because they rely heavily on its features
+so they can work. Containers running on Windows work because of WSL, the Windows
+Subsystem for Linux, or sometimes Hyper-V. That includes the Linux kernel needed
+for them to work.

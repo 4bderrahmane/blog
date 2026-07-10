@@ -1,0 +1,66 @@
+export const metadata = {
+  title: "How SHA-256 Hashes Any Input Into 256 Bits",
+  date: "2026-03-18",
+  summary: "How SHA-256 turns arbitrary input into a fixed 256-bit fingerprint.",
+};
+
+Have you ever wondered how SHA-256 can hash a 1-byte input, a password, or even
+a 1GB file and still always produce exactly 256 bits?
+
+The answer is deeper than "it just shrinks the data."
+
+SHA-256 does not process the whole message in one shot. It works step by step,
+in fixed-size 512-bit blocks.
+
+But before it processes the first block, it has to prepare the data. The
+algorithm pads the message, appending a single `1` bit, followed by enough `0`s
+to reach 448 bits, and finally it attaches a 64-bit integer representing the
+exact original length of the message. This crucial security step ensures every
+input aligns perfectly while protecting against certain cryptographic
+vulnerabilities.
+
+Each 512-bit block is then mixed into an internal 256-bit state, and that state
+keeps evolving until the very last block is processed.
+
+The final result is the hash you see as a 64-character hexadecimal value, such
+as:
+
+```txt
+be6c18dac6223d0255dc20cb6d14613886726b9e6c4955455b5b1f75abd8cb8a
+```
+
+So, SHA-256 is not a storage format, and it is not reversible compression. It is
+better understood as an iterative state transformation: each block modifies the
+internal state, and the next block starts from that updated state. That is why
+even very large files can be hashed efficiently using only a small, fixed amount
+of memory.
+
+What makes SHA-256 especially elegant is how each block is transformed.
+
+It begins with 8 fixed 32-bit words as its initial state. Then, for every block,
+it splits the data into 16 words, expands them into 64, and runs 64 rounds of
+mixing based on rotations, XORs, modular additions, and nonlinear functions like
+Choose (Ch) and Majority (Maj). At each round, one word from the expanded
+message and one fixed constant are injected into the computation.
+
+After 64 rounds, the transformed working state is added back into the running
+hash state, and the process continues with the next block.
+
+One detail I find particularly interesting is the origin of those constants.
+
+The initial hash values are derived from the fractional parts of the square
+roots of the first 8 prime numbers, while the 64 round constants are derived
+from the fractional parts of the cube roots of the first 64 prime numbers.
+
+Why do this instead of choosing random-looking constants? Because in
+cryptography, transparency matters.
+
+These constants act as "nothing-up-my-sleeve" numbers. They weren't chosen
+because primes inherently give the hash its security, but because deriving
+constants from well-known mathematical values proves to the world that the
+algorithm wasn't secretly hand-picked to favor an attacker.
+
+Its strength isn't that it somehow "stores" a huge message inside 256 bits. Its
+strength is that it processes arbitrary-length input through a carefully
+designed sequence of fixed-size transformations, producing a final 256-bit
+fingerprint that is highly sensitive to every single bit of the original input.

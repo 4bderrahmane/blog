@@ -1,0 +1,31 @@
+export const metadata = {
+  title: "LUKS, Key Slots, and a Broken Keyboard",
+  date: "2026-04-21",
+  summary: "How LUKS lets you add another passphrase without re-encrypting the disk.",
+};
+
+I lost my wireless dongle while I was participating in CodeIT 9 at EHTP because
+I used my personal keyboard and mouse. But the bigger problem isn't that; it's
+the fact that I was locked out of my computer.
+
+I couldn't unlock my `/dev/nvme0n1p3` partition since I was unable to type the
+passphrase, due to the fact that some of the required keys weren't working. I
+can use Bluetooth later when the disk is decrypted, so the passphrase was the
+only obstacle.
+
+Fortunately I found an old working wired keyboard, so I used it to type the
+passphrase.
+
+This made me think about an idea: setting another passphrase. That is possible
+because of LUKS, Linux Unified Key Setup, which allows you to have many
+passphrases to decrypt a disk partition using the same master key, randomly
+generated using the `getrandom()` syscall when you first format the partition.
+
+When you add a new passphrase, there is no need to decrypt your whole disk and
+then encrypt it again, because you don't change the real encryption key. You
+only add a new encrypted copy of it, locked by the new passphrase.
+
+You can set 8 passphrases in LUKS1 and 32 passphrases in LUKS2. When you type a
+passphrase, the algorithm checks every key slot until it finds yours.
+
+And of course the new passphrase doesn't have any broken keys.
